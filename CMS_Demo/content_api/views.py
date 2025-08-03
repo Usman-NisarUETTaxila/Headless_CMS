@@ -86,7 +86,7 @@ class ContentItemListCreateUpdateDestroy(
         serializer = ContentItemSerializer(data=data_to_save)
         if serializer.is_valid():
             serializer.save()
-            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+            return Response({"Message": "ContentItem Created Successfully!"}, status=status.HTTP_201_CREATED)
         else:
             print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -105,13 +105,13 @@ class ContentItemListCreateUpdateDestroy(
             serializer = ContentItemSerializer(content_item, data=update_data, partial=True)
             if serializer.is_valid():
                 serializer.save()
-                return Response(data=serializer.data, status=status.HTTP_202_ACCEPTED)
+                return Response({"Message": "ContentItem Updated Successfully!"}, status=status.HTTP_202_ACCEPTED)
             else:
                 print(serializer.errors)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
         except ContentItem.DoesNotExist:
-            return Response({"detail": "Item Not Found!"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "ContentItem Not Found!"}, status=status.HTTP_404_NOT_FOUND)
     
     def delete(self, request, *args, **kwargs):
         try:
@@ -121,7 +121,7 @@ class ContentItemListCreateUpdateDestroy(
                 for attr in content_item_attributes:
                     attr.delete()
             content_item.delete()
-            return Response({"Message": "Deleted Successfully!"}, status=status.HTTP_200_OK)
+            return Response({"Message": "ContentItem Deleted Successfully!"}, status=status.HTTP_200_OK)
         except ContentItem.DoesNotExist:
             return Response({"detail": "Item Not Found!"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -154,7 +154,7 @@ class FieldValueListCreateUpdateDestroy(
 
             if field_value_instance:
                 field_value_instance.save()
-                return Response({},status=status.HTTP_201_CREATED)
+                return Response({"Message": "Field Value Created Successfully!"},status=status.HTTP_201_CREATED)
             else:
                 return Response({"error": "Invalid Data!"},status=status.HTTP_400_BAD_REQUEST)
         except ContentItem.DoesNotExist:
@@ -189,7 +189,7 @@ class FieldValueListCreateUpdateDestroy(
                           
             updated_field_value = update_model_from_dict(field_value, update_data)
             updated_field_value.save()
-            return Response({"Message": "Updated Successfully!",
+            return Response({"Message": "Field Value Updated Successfully!",
                              "Not Matched": missing_message}, status=status.HTTP_202_ACCEPTED)                
         
         except ContentItem.DoesNotExist:
@@ -208,7 +208,7 @@ class FieldValueListCreateUpdateDestroy(
                 return Response({"detail": "FieldValue not found"}, status=status.HTTP_404_NOT_FOUND)
             
             field_value.delete()
-            return Response({"Message": "Deleted Successfully!"}, status=status.HTTP_200_OK)
+            return Response({"Message": "Field Value Deleted Successfully!"}, status=status.HTTP_200_OK)
         except ContentItem.DoesNotExist:
             return Response({"detail": "Item Not Found!"}, status=status.HTTP_404_NOT_FOUND)
             
