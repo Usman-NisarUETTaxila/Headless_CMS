@@ -16,12 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from rest_framework.authtoken.views import obtain_auth_token
 from .views import ContentItemListCreateUpdateDestroy, FieldValueListCreateUpdateDestroy, ContentTypeList, FieldDefinitionList
 
 urlpatterns = [
+    path('auth/', obtain_auth_token),
     path('content_items/', ContentItemListCreateUpdateDestroy.as_view()),
     path('content_items/<int:pk>/', ContentItemListCreateUpdateDestroy.as_view()),
-    path('field_values/', FieldValueListCreateUpdateDestroy.as_view()),
+    path('field_values/<int:pk>/', FieldValueListCreateUpdateDestroy.as_view()),
     path('field_values/<int:pk>/field/<str:name>/', FieldValueListCreateUpdateDestroy.as_view()),
     path('content_types/', ContentTypeList.as_view()),
     path('field_definitions/', FieldDefinitionList.as_view()),

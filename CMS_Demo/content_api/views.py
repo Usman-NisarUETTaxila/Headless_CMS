@@ -2,6 +2,9 @@ from django.shortcuts import render
 from rest_framework import generics, mixins
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.authentication import TokenAuthentication, SessionAuthentication
+from rest_framework.permissions import IsAuthenticated
+from .permissions import IsAuthenticatedOrAdminUser
 from .models import ContentItem, FieldValue, ContentType, FieldDefinition
 from .serializer import ContentItemSerializer, FieldValueSerializer, ContentTypeSerializer, FieldDefinitionSerializer
 import base64
@@ -17,6 +20,9 @@ class ContentItemListCreateUpdateDestroy(
     queryset = ContentItem.objects.all()
     print(queryset)
     serializer_class = ContentItemSerializer
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticatedOrAdminUser]
+
 
     def get(self, request, *args, **kwargs):
         if kwargs != {}:
@@ -129,30 +135,32 @@ class FieldValueListCreateUpdateDestroy(
     queryset = FieldValue.objects.all()
     print(queryset)
     serializer_class = FieldValueSerializer
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticatedOrAdminUser]
 
     def post(self, request, *args, **kwargs):
-        post_data = request.data
-        content_item_obj = ContentItem.objects.filter(slug=post_data['content_item']).first()
-        if not content_item_obj:
-            return Response({"error": "ContentItem not found."}, status=status.HTTP_400_BAD_REQUEST)
-    
-        field_definition_obj = FieldDefinition.objects.filter(name=post_data['field_def']).first()
-        if not field_definition_obj:
-            return Response({"error": "Field not found."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if post_data['value_type'] == 'text':
-            field_value_instance = FieldValue(content_item=content_item_obj, field_definition=field_definition_obj, value_type="text", text_value=post_data["value"])
-        elif post_data['value_type'] == 'binary':
-            binary_data = base64.b64decode(post_data["value"])
-            field_value_instance = FieldValue(content_item=content_item_obj, field_definition=field_definition_obj, value_type="binary", binary_value=binary_data)
-        else:
-            return Response({"error": "Invalid Value Type!"},status=status.HTTP_400_BAD_REQUEST)
+        try:
+            post_data = request.data
+            content_item_obj = ContentItem.objects.get(pk=kwargs.get('pk'))
+            field_definition_obj = FieldDefinition.objects.filter(name=post_data['field_def']).first()
+            
+            if post_data['value_type'] == 'text':
+                field_value_instance = FieldValue(content_item=content_item_obj, field_definition=field_definition_obj, value_type="text", text_value=post_data["value"])
+            elif post_data['value_type'] == 'binary':
+                binary_data = base64.b64decode(post_data["value"])
+                field_value_instance = FieldValue(content_item=content_item_obj, field_definition=field_definition_obj, value_type="binary", binary_value=binary_data)
+            else:
+                return Response({"error": "Invalid Value Type!"},status=status.HTTP_400_BAD_REQUEST)
 
-        if field_value_instance:
-            field_value_instance.save()
-            return Response({},status=status.HTTP_201_CREATED)
-        else:
-            return Response({"error": "Invalid Data!"},status=status.HTTP_400_BAD_REQUEST)
+            if field_value_instance:
+                field_value_instance.save()
+                return Response({},status=status.HTTP_201_CREATED)
+            else:
+                return Response({"error": "Invalid Data!"},status=status.HTTP_400_BAD_REQUEST)
+        except ContentItem.DoesNotExist:
+            return Response({"detail": "ContentItem Not Found!"}, status=status.HTTP_404_NOT_FOUND)
+        except FieldDefinition.DoesNotExist:
+            return Response({"detail": "Field Not Found!"}, status=status.HTTP_404_NOT_FOUND)
     
     def put(self, request, *args, **kwargs):
         try:
